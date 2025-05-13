@@ -34,7 +34,7 @@ router.get("/current_lessons", authenticateToken, async (req, res) => {
 });
 
 
-
+//STUDENT BOOK A LESSONS
 router.post("/lessons", authenticateToken, async (req, res) => {
   try {
     const studentUID = req.user.uid;
@@ -85,7 +85,7 @@ router.post("/lessons", authenticateToken, async (req, res) => {
   }
 });
 
-
+//COACH BOOK A LESSON
 router.post("/coach/lessons", authenticateToken, async (req, res) => {
   try {
     const coach_uid = req.user.uid;

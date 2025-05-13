@@ -46,7 +46,80 @@ router.get("/availability", authenticateToken, async (req, res) => {
   }
 });
 
+//FOR COACH
 router.get("/availability/time", authenticateToken, async (req, res) => {
+  try {
+    const coachId = req.user.uid;
+
+    if (!coachId) {
+      return res
+        .status(400)
+        .json({ message: "Missing coach_uid in query params" });
+    }
+
+    // Step 1: Get all future availability entries including booking_times
+    const availabilityData = await db.query(
+      `SELECT id, to_char(date, 'YYYY-MM-DD') as date, start_time, end_time, time_blocks, booking_times
+       FROM availability 
+       WHERE coach_uid = $1 AND date >= CURRENT_DATE
+       ORDER BY date, start_time`,
+      [coachId]
+    );
+
+    // Step 2: Get booked lesson time slots
+    const bookedLessons = await db.query(
+      `SELECT to_char(lesson_date, 'YYYY-MM-DD') as date, start_time, end_time 
+       FROM lessons 
+       WHERE coach_uid = $1 AND lesson_date >= CURRENT_DATE`,
+      [coachId]
+    );
+
+    const bookedSlots = bookedLessons.rows.map((lesson) => ({
+      date: lesson.date,
+      start: lesson.start_time,
+      end: lesson.end_time,
+    }));
+
+    // Step 3: Filter out booked booking_times
+    const availableSlots = [];
+
+    availabilityData.rows.forEach((avail) => {
+      const bookingTimes = avail.booking_times;
+
+      if (!bookingTimes || !Array.isArray(bookingTimes)) return;
+
+      const filteredTimes = bookingTimes.filter((bt) => {
+        return !bookedSlots.some(
+          (booked) =>
+            booked.date === avail.date &&
+            booked.start === bt.booking_time_start &&
+            booked.end === bt.booking_time_end
+        );
+      });
+
+      if (filteredTimes.length > 0) {
+        availableSlots.push({
+          id: avail.id,
+          date: avail.date,
+          start_time: avail.start_time,
+          end_time: avail.end_time,
+          // break_start: avail.break_start,
+          // break_end: avail.break_end,
+          time_blocks: avail.time_blocks,
+          available_booking_times: filteredTimes,
+        });
+      }
+    });
+
+    res.status(200).json({ available_slots: availableSlots});
+  } catch (err) {
+    console.error("Error fetching availability:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+//FOR USER
+router.get("/availability/list", authenticateToken, async (req, res) => {
   try {
     const coachId = req.query.coach_uid;
 
@@ -110,7 +183,6 @@ router.get("/availability/time", authenticateToken, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-
 
 router.delete("/availability", authenticateToken, async (req, res) => {
   try {
@@ -248,6 +320,53 @@ router.post("/availability", authenticateToken, async (req, res) => {
         .status(400)
         .json({ message: "Availability data must be a non-empty array" });
     }
+
+    const invalidPastDates = [];
+
+for (const a of availabilities) {
+  const inputDate = new Date(a.date);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Normalize to midnight for accurate comparison
+  inputDate.setHours(0, 0, 0, 0); // Normalize input date
+
+  if (inputDate < today) {
+    invalidPastDates.push(a.date.split("T")[0]);
+  }
+}
+
+if (invalidPastDates.length > 0) {
+  return res.status(400).json({
+    message: "Dates must be today or in the future",
+    invalidDates: invalidPastDates,
+  });
+}
+
+const invalidTimeEntries = [];
+
+for (const a of availabilities) {
+  const { start_time, end_time, break_start, break_end, date } = a;
+
+  if (end_time <= start_time) {
+    invalidTimeEntries.push({
+      date: date.split("T")[0],
+      message: "End time must be after start time",
+    });
+  }
+
+  if (break_start && break_end && break_end <= break_start) {
+    invalidTimeEntries.push({
+      date: date.split("T")[0],
+      message: "Break end must be after break start",
+    });
+  }
+}
+
+if (invalidTimeEntries.length > 0) {
+  return res.status(400).json({
+    message: "Invalid time ranges in availability",
+    errors: invalidTimeEntries,
+  });
+}
 
 
     // ✅ Check for duplicate dates in the request body
