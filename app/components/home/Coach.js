@@ -1,7 +1,7 @@
 import { View, Text, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; // or any other icon library you prefer
 
-const Home = () => {
+const Coach = () => {
   // Sample booking data
   const bookings = [
     {
@@ -127,4 +127,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default Coach;

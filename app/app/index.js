@@ -15,7 +15,7 @@ const Index = () => {
       // 👇 Add 2-second delay before navigating
       setTimeout(() => {
         if (token) {
-          router.push('/(tabs)/Home');
+          router.push('/(usertabs)/home/Home');
         } else {
           router.push('/(auth)/Login');
         }

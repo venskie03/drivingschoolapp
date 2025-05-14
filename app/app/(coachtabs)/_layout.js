@@ -15,7 +15,7 @@ const TabLayout = () => {
         tabBarIcon: ({ color, size }) => {
           let iconName;
 
-          if (route.name === 'Home') {
+          if (route.name === 'home') {
             iconName = 'home-outline';
           } else if (route.name === 'Settings') {
             iconName = 'settings-outline';
@@ -26,7 +26,7 @@ const TabLayout = () => {
        
       })}
     >
-      <Tabs.Screen name="Home" />
+      <Tabs.Screen name="home" />
       <Tabs.Screen name="time" />
       <Tabs.Screen name="Settings" />
     </Tabs>
