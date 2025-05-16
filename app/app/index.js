@@ -11,12 +11,14 @@ const Index = () => {
   const checkAuth = async () => {
     try {
       const token = await AsyncStorage.getItem('Authorization');
-
+      const role = await AsyncStorage.getItem('role');
       // 👇 Add 2-second delay before navigating
       setTimeout(() => {
-        if (token) {
+        if (token && !role) {
           router.push('/(usertabs)/home/Home');
-        } else {
+        } else if(token && role){
+            router.push('/(coachtabs)/home/Home');
+        } else  {
           router.push('/(auth)/Login');
         }
         setIsShowSplashScreen(false);

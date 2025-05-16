@@ -22,7 +22,7 @@ const RootLayout = () => {
   return (
     <AuthenticatedProvider>
       <FontLoader>
-        <SafeAreaView style={{ flex: 1 }}>
+        <SafeAreaView style={{ flex: 1 }}>      
           {/* <Error/> */}
           <Lodingscreen />
           <StackLayout />

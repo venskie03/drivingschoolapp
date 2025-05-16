@@ -27,7 +27,7 @@ const TabLayout = () => {
       })}
     >
       <Tabs.Screen name="home" />
-      <Tabs.Screen name="time" />
+      <Tabs.Screen name="Invoices" />
       <Tabs.Screen name="Settings" />
     </Tabs>
   );

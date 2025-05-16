@@ -1,15 +1,16 @@
 import { View, Text, ScrollView, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { API } from '../../../api/api';
+import { formatTimeRange } from '../../../helper/helper';
 
 const Time = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const router = useRouter();
   const [timeSlots, setTimeSlots] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const path = usePathname();
   const handleEdit = (id) => {
     console.log('Edit time slot:', id);
   };
@@ -44,7 +45,7 @@ const Time = () => {
 
   useEffect(() => {
     handleTimeAvailability();
-  }, []);
+  }, [path]);
 
   return (
     <View className="flex-1 bg-white">
@@ -77,7 +78,7 @@ const Time = () => {
               <View className="flex-row items-center mb-3">
                 <Ionicons name="time" size={18} color="#4b5563" className="mr-2" />
                 <Text className="text-base font-medium text-gray-800">
-                  {slot.start_time} - {slot.end_time}
+                  {formatTimeRange(slot.start_time, slot.end_time)}
                 </Text>
               </View>
               

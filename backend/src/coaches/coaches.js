@@ -6,16 +6,49 @@ const { generateBookingTimes } = require("../helper/helper");
 
 // Get all users with role 'coach'
 router.get("/users", authenticateToken, async (req, res) => {
+  const student_uid = req.user.uid;
+
   try {
-    const result = await db.query("SELECT * FROM users WHERE role = $1", [
-      "coach",
-    ]);
-    res.json(result.rows);
+    // 1. Get the student's favorite coaches array (if any)
+    const studentRes = await db.query(
+      `SELECT favorite_coach FROM users WHERE uid = $1`,
+      [student_uid]
+    );
+
+    // favorite_coach is an array of objects like [{ uid: 'coach1' }, { uid: 'coach2' }, ...]
+    const favoriteCoaches = studentRes.rows[0]?.favorite_coach || [];
+
+    // Extract an array of favorite UIDs for easy lookup and ordering
+    const favoriteUIDs = favoriteCoaches.map(fc => fc.uid);
+
+    // 2. Get all coaches
+    const coachesRes = await db.query(`SELECT * FROM users WHERE role = $1`, ["coach"]);
+    const coaches = coachesRes.rows;
+
+    // 3. Sort coaches so favorites come first (in order), then the rest
+    const sortedCoaches = coaches.sort((a, b) => {
+      const aIndex = favoriteUIDs.indexOf(a.uid);
+      const bIndex = favoriteUIDs.indexOf(b.uid);
+
+      if (aIndex === -1 && bIndex === -1) return 0; // neither favorite, keep order
+      if (aIndex === -1) return 1; // a not favorite, b favorite -> b first
+      if (bIndex === -1) return -1; // a favorite, b not favorite -> a first
+      return aIndex - bIndex; // both favorite, sort by favorite order
+    });
+
+    // 4. Add is_favorite property
+    const coachesWithFavoriteFlag = sortedCoaches.map(coach => ({
+      ...coach,
+      is_favorite: favoriteUIDs.includes(coach.uid),
+    }));
+
+    res.json(coachesWithFavoriteFlag);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 router.get("/availability", authenticateToken, async (req, res) => {
   try {
@@ -184,6 +217,7 @@ router.get("/availability/list", authenticateToken, async (req, res) => {
   }
 });
 
+// DELETE COACH AVAILABILITY
 router.delete("/availability", authenticateToken, async (req, res) => {
   try {
     const availabilityTimeID = req.query.id; // should use .id
@@ -225,7 +259,8 @@ router.delete("/availability", authenticateToken, async (req, res) => {
   }
 });
 
-router.put("/availability", authenticateToken, async (req, res) => {
+// UPDATE COACH AVAILABILITY
+router.patch("/availability", authenticateToken, async (req, res) => {
   try {
     const availabilityTimeID = req.query.id;
     const coach_uid = req.user.uid;
@@ -303,7 +338,7 @@ router.put("/availability", authenticateToken, async (req, res) => {
   }
 });
 
-
+// CREATE COACH AVAILABILITY
 router.post("/availability", authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== "coach") {
@@ -453,6 +488,92 @@ if (invalidTimeEntries.length > 0) {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+// CREATE COACH FAVORITE
+router.get("/favorite_coach", authenticateToken, async (req, res) => {
+  try {
+    const coach_uid = req.query.coach_uid;
+    const student_uid = req.user.uid;
+
+    if (!coach_uid) {
+      return res.status(400).json({ message: "Coach ID is required" });
+    }
+
+    // Get current favorite_coach list
+    const result = await db.query(
+      `SELECT favorite_coach FROM users WHERE uid = $1`,
+      [student_uid]
+    );
+
+    let favorites = result.rows[0]?.favorite_coach || [];
+
+    // Check if coach is already in favorites
+    const isAlreadyFavorite = favorites.some(fc => fc.uid === coach_uid);
+
+    if (isAlreadyFavorite) {
+      return res.status(409).json({ message: "Coach is already in favorites" });
+    }
+
+    // Append the new favorite coach
+    favorites.push({ uid: coach_uid });
+
+    // Update user's favorite_coach list
+  await db.query(
+  `UPDATE users SET favorite_coach = $1 WHERE uid = $2`,
+  [favorites, student_uid]
+);
+
+
+    res.status(200).json({ message: "Coach added to favorites", favorites });
+  } catch (err) {
+    console.error("Error setting favorite coach:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+// DELETE COACH FAVORITE
+router.delete("/favorite_coach", authenticateToken, async (req, res) => {
+  try {
+    const coach_uid = req.query.coach_uid; 
+    const student_uid = req.user.uid;
+
+    if (!coach_uid) {
+      return res.status(400).json({ message: "Coach ID is required" });
+    }
+
+    // Get current favorite_coach list (array)
+    const result = await db.query(
+      `SELECT favorite_coach FROM users WHERE uid = $1`,
+      [student_uid]
+    );
+
+    let favorites = result.rows[0]?.favorite_coach || [];
+
+    // Check if coach exists in favorites
+    const index = favorites.findIndex(fc => fc.uid === coach_uid);
+
+    if (index === -1) {
+      return res.status(404).json({ message: "Favorite coach not found" });
+    }
+
+    // Remove the coach from favorites array
+    favorites.splice(index, 1);
+
+    // Update user's favorite_coach list in DB
+    await db.query(
+      `UPDATE users SET favorite_coach = $1 WHERE uid = $2`,
+      [favorites, student_uid]
+    );
+
+    res.status(200).json({ message: "Favorite coach removed successfully", favorites });
+  } catch (err) {
+    console.error("Error removing favorite coach:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
 
 
 

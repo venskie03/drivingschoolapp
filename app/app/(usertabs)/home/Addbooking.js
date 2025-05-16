@@ -1,8 +1,9 @@
-import { View, Text, ScrollView, TouchableOpacity, Modal, FlatList } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Modal, FlatList, Alert } from "react-native";
 import React, { useEffect, useState } from "react";
 import { API } from "../../../api/api";
 import { Ionicons } from '@expo/vector-icons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { formatTimeRange } from "../../../helper/helper";
 
 const AddBooking = () => {
   const [coaches, setCoaches] = useState([]);
@@ -26,6 +27,28 @@ const AddBooking = () => {
   useEffect(() => {
     fetchListOfCoaches();
   }, []);
+
+  const addCoachToFavorite = async (uid) => {
+    try {
+      const response = await API.createFavoriteCoach({coach_uid: uid});
+      Alert.alert(`${response.data.message}`)
+      fetchListOfCoaches();
+    } catch (error) {
+      console.log(error)
+      Alert.alert(`${error.message}`)
+    }
+  }
+
+    const deleteCoachToFavorite = async (uid) => {
+    try {
+      const response = await API.deleteFavoriteCoach({coach_uid: uid});
+      Alert.alert(`${response.data.message}`)
+      fetchListOfCoaches();
+    } catch (error) {
+      console.log(error)
+      Alert.alert(`${error.message}`)
+    }
+  }
 
   const handleContinueSelectedCoach = async () => {
     try {
@@ -56,7 +79,7 @@ const AddBooking = () => {
         start_time: selectedTimeSlot.booking_time_start,
         end_time: selectedTimeSlot.booking_time_end,
         date: selectedDate,
-        status: 'schedule'
+        status: 'pending'
       }
     
     try {
@@ -67,9 +90,10 @@ const AddBooking = () => {
      console.log("BOOKING RESPONSE", response.data)
        setShowTimeModal(false);
         fetchListOfCoaches();
+        Alert.alert(`${response.data.message}`)
     } catch (error) {
       console.error("Booking error:", error);
-      // Handle error (show error message to user)
+         Alert.alert(`${error.message}`)
     }
   };
 
@@ -105,7 +129,7 @@ const AddBooking = () => {
       }}
     >
       <Text className="text-lg font-semibold text-gray-800">
-        {item.booking_time_start} - {item.booking_time_end}
+        {formatTimeRange(item.booking_time_start, item.booking_time_end)}
       </Text>
     </TouchableOpacity>
   );
@@ -131,9 +155,11 @@ const AddBooking = () => {
               <Ionicons name="person-circle" size={40} color="#4f46e5" />
             </View>
 
-            <TouchableOpacity className="absolute top-3 right-4">
+           {coach.is_favorite ?  <TouchableOpacity onPress={()=> deleteCoachToFavorite(coach.uid)} className="absolute top-3 right-4">
+              <MaterialIcons name="favorite" size={17} color="black" />
+            </TouchableOpacity> :  <TouchableOpacity onPress={()=> addCoachToFavorite(coach.uid)} className="absolute top-3 right-4">
               <MaterialIcons name="favorite-border" size={17} color="black" />
-            </TouchableOpacity>
+            </TouchableOpacity>}
             
             <View className="flex-1">
               <Text className="text-lg font-semibold text-gray-800 mb-1">
@@ -234,7 +260,7 @@ const AddBooking = () => {
                 selectedTimeSlot ? 'bg-blue-500' : 'bg-gray-400'
               }`}
               activeOpacity={0.8}
-              onPress={handleConfirmBooking}
+                onPress={()=> handleConfirmBooking(false)}
               disabled={!selectedTimeSlot}
             >
               <Text className="text-white font-bold mr-2">
@@ -242,6 +268,19 @@ const AddBooking = () => {
               </Text>
               <Ionicons name="checkmark-circle" size={20} color="white" />
             </TouchableOpacity>
+             {/* <TouchableOpacity
+              className={`flex-row items-center justify-center py-4 mt-2 rounded-xl ${
+                selectedTimeSlot ? 'bg-green-500' : 'bg-gray-400'
+              }`}
+              activeOpacity={0.8}
+              onPress={()=> handleConfirmBooking(true)}
+              disabled={!selectedTimeSlot}
+            >
+              <Text className="text-white font-bold mr-2">
+                Pay Booking
+              </Text>
+              <Ionicons name="checkmark-circle" size={20} color="white" />
+            </TouchableOpacity> */}
           </View>
         </View>
       </Modal>

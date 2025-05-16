@@ -56,10 +56,18 @@ const Login = () => {
       const response = await API.loginUserAccount(formData);
       console.log("RESPONSE", response.data);
       if(response.data.status === 'success'){
+
        setTimeout( async () => {
-         router.push('/(tabs)/Home')
+        if(response.data.role === 'coach'){
+               await AsyncStorage.setItem('Authorization', response.data.token)
+        await AsyncStorage.setItem('role', response.data.role)
+          router.push('/(coachtabs)/home/Home')
+        setIsLoading(false);
+        } else {
+            router.push('/(usertabs)/home/Home')
         setIsLoading(false);
         await AsyncStorage.setItem('Authorization', response.data.token)
+        } 
        }, 2000);
       }
     } catch (error) {

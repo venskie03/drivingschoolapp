@@ -5,6 +5,7 @@ const port = process.env.PORT || 3000;
 const authRoutes = require('./auth/authRoutes');
 const coaches = require('./coaches/coaches');
 const lessons = require('./lesson/lessons');
+const invoices = require('./invoices/invoices');
 
 app.use(express.json());
 
@@ -17,6 +18,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/coaches', coaches);
 
 app.use('/api/lessons', lessons);
+
+app.use('/api/invoice', invoices);
 
 
 app.listen(port, () => {

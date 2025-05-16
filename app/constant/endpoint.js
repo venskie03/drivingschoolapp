@@ -10,7 +10,9 @@ export const CoachesAPI = {
   createTimeSlots: "/coaches/availability",
   listOfAvailability: "/coaches/availability/time",
   deleteTimeSlots: "/coaches/availability/:id",
-  coachListOfDateTime: '/coaches/availability/list'
+  coachListOfDateTime: '/coaches/availability/list',
+  favoriteCoach: '/coaches/favorite_coach',
+  deleteFavoriteCoach: '/coaches/favorite_coach',
 };
 
 export const LessonsAPI = {
@@ -18,3 +20,10 @@ export const LessonsAPI = {
   currentUserLesson: "/lessons/current_lessons",
   bookAlesson: "/lessons/lessons",
 };
+
+export const InvoiceAPI = {
+  userInvoice: '/invoice/current_invoices',
+  payInvoice: '/invoice/pay_invoice',
+  cancelLesson: '/invoice/cancel_lesson',
+  cancelByCoachLesson: '/invoice/coach/cancel_lesson'
+}

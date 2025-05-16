@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { AuthenticationAPI, CoachesAPI, LessonsAPI } from '../constant/endpoint';
+import { AuthenticationAPI, CoachesAPI, InvoiceAPI, LessonsAPI } from '../constant/endpoint';
 
 const baseURL = 'http://192.168.0.113:3000/api'
 
@@ -59,4 +59,15 @@ export const API = {
   //LIST OF COACH
   coachList: () => api(CoachesAPI.listOfCoach, 'get'),
   coachAvailableTimeDate: (params) => api(CoachesAPI.coachListOfDateTime, 'get', undefined, params),
+
+  //FAVORITE COACH
+  createFavoriteCoach: (params) => api(CoachesAPI.favoriteCoach, 'get', undefined, params),
+  deleteFavoriteCoach: (params) => api(CoachesAPI.deleteFavoriteCoach, 'delete', undefined, params),
+
+   //INVOICE
+  listOfInvoices: () => api(InvoiceAPI.userInvoice, 'get'),
+  payInvoice: (params) => api(InvoiceAPI.payInvoice, 'patch', undefined, params),
+   cancelLesson: (body) => api(InvoiceAPI.cancelLesson, 'patch', body),
+      coachCancelLesson: (body) => api(InvoiceAPI.cancelByCoachLesson, 'patch', body),
+
 };

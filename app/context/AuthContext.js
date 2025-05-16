@@ -25,6 +25,7 @@ export const AuthenticatedProvider = ({ children }) => {
   const handleLogoutUser = async () => {
      await AsyncStorage.removeItem('Authorization');
     router.navigate('/(auth)/Login');
+     await AsyncStorage.removeItem('role')
   }
 
   useEffect(()=>{
